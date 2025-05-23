@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My To-Do List</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style> /* Basic inline styles for demonstration */
+    .completed { text-decoration: line-through; color: grey; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;}
+    .actions form { display: inline-block; margin-left: 10px; }
+    .item-description { flex-grow: 1; }
+    .auth-info { margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc;}
+    .alert { padding: 10px; margin-bottom: 15px; border: 1px solid transparent; border-radius: 4px; }
+    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+    .text-danger { color: #721c24; } /* For inline error messages */
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="auth-info">
+        Welcome, <strong sec:authentication="name">[Username]</strong>!
+        <!-- CSRF token is automatically included by Thymeleaf if Spring Security CSRF is enabled -->
+        <form th:action="@{/perform_logout}" method="post" style="display: inline; margin-left: 20px;">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+
+    <h1>My To-Do List</h1>
+
+    <!-- Display global error messages from redirects -->
+    <div th:if="${param.error == 'authError'}" class="alert alert-danger">You are not authorized to perform that action.</div>
+    <div th:if="${param.error == 'notFound'}" class="alert alert-danger">Item not found.</div>
+
+
+    <form th:action="@{/add}" th:object="${newTodo}" method="post" style="margin-bottom: 20px;">
+        <div>
+            <label for="description">New To-Do:</label>
+            <input type="text" id="description" th:field="*{description}" placeholder="Enter a new to-do item" size="50"/>
+            <button type="submit">Add Item</button>
+        </div>
+        <!-- Display validation errors for the description field of the newTodo object -->
+        <div th:if="${#fields.hasErrors('description')}" class="text-danger">
+            <p th:errors="*{description}">Description errors</p>
+        </div>
+    </form>
+
+    <h2>Items:</h2>
+    <ul th:if="${not #lists.isEmpty(todos)}">
+        <li th:each="todo : ${todos}" th:classappend="${todo.completed} ? 'completed' : ''">
+            <span class="item-description" th:text="${todo.description}">Item Description</span>
+            <div class="actions">
+                <!-- CSRF token is automatically included by Thymeleaf -->
+                <form th:action="@{/toggle/{id}(id=${todo.id})}" method="post">
+                    <button type="submit" th:text="${todo.completed} ? 'Mark Incomplete' : 'Mark Complete'">Toggle</button>
+                </form>
+                <!-- CSRF token is automatically included by Thymeleaf -->
+                <form th:action="@{/delete/{id}(id=${todo.id})}" method="post">
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        </li>
+    </ul>
+    <p th:if="${#lists.isEmpty(todos)}">No to-do items yet! Add one above.</p>
+</div>
+</body>
+</html>
