@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - Simple ToDo</title>
-    <link rel="stylesheet" th:href="@{/style.css/style.css}"/> <!-- Example CSS -->
+    <!-- Corrected CSS Link -->
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
 <div class="container">
     <h1>Login</h1>
-    <div th:if="${param.error}" class="alert alert-danger">
+
+    <!-- Display messages -->
+    <div th:if="${param.error != null}" class="alert alert-danger"> <!-- Check if param.error exists -->
         Invalid username or password.
     </div>
-    <div th:if="${param.logout}" class="alert alert-success">
+    <div th:if="${param.logout != null}" class="alert alert-success"> <!-- Check if param.logout exists -->
         You have been logged out.
     </div>
+    <!-- Check for flash attribute for registration success -->
     <div th:if="${registrationSuccess}" th:text="${registrationSuccess}" class="alert alert-success">
-        Registration successful message.
+        <!-- Message from registration redirect -->
     </div>
 
     <form th:action="@{/perform_login}" method="post">
@@ -31,7 +35,9 @@
             <button type="submit">Log in</button>
         </div>
     </form>
-    <p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+    <p style="text-align: center; margin-top: 20px;">
+        Don't have an account? <a th:href="@{/register}">Register here</a>
+    </p>
 </div>
 </body>
 </html>

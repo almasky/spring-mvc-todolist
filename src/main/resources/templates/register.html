@@ -3,43 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Register - Simple ToDo</title>
-    <link rel="stylesheet" th:href="@{/style.css/style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
 <div class="container">
     <h1>Register New Account</h1>
-    <div th:if="${registrationError}" th:text="${registrationError}" class="alert alert-danger">
-        Registration error message.
+
+    <!-- Display registration error from model attribute -->
+    <div th:if="${registrationError != null}" class="alert alert-danger">
+        <p th:text="${registrationError}">Registration error placeholder</p>
     </div>
 
     <form th:action="@{/perform-register}" th:object="${user}" method="post">
         <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username" th:field="*{username}" required/>
-            <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="text-danger"></p>
+            <label for="reg_username">Username:</label>
+            <input type="text" id="reg_username" th:field="*{username}" required/>
+            <!-- Display validation errors for this field -->
+            <div th:if="${#fields.hasErrors('username')}" class="text-danger">
+                <p th:errors="*{username}"></p>
+            </div>
         </div>
         <div>
-            <label for="email">Email:</label>
-            <input type="email" id="email" th:field="*{email}" required/>
-            <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-danger"></p>
+            <label for="reg_email">Email:</label>
+            <input type="email" id="reg_email" th:field="*{email}" required/>
+            <div th:if="${#fields.hasErrors('email')}" class="text-danger">
+                <p th:errors="*{email}"></p>
+            </div>
         </div>
         <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" th:field="*{password}" required/>
-            <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="text-danger"></p>
+            <label for="reg_password">Password:</label>
+            <input type="password" id="reg_password" th:field="*{password}" required/>
+            <div th:if="${#fields.hasErrors('password')}" class="text-danger">
+                <p th:errors="*{password}"></p>
+            </div>
         </div>
-        <!-- Optional: Confirm Password
+        <!--
+        Optional: Confirm Password Field
+        If you add a confirmPassword field to your User object (or a separate DTO)
+        and validation logic in the controller/service.
         <div>
             <label for="confirmPassword">Confirm Password:</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" required/>
-            <p th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="text-danger"></p>
+            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" />
+             <div th:if="${#fields.hasErrors('confirmPassword')}" class="text-danger">
+                <p th:errors="*{confirmPassword}"></p>
+            </div>
         </div>
         -->
         <div>
             <button type="submit">Register</button>
         </div>
     </form>
-    <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+    <p style="text-align: center; margin-top: 20px;">
+        Already have an account? <a th:href="@{/login}">Login here</a>
+    </p>
 </div>
 </body>
 </html>

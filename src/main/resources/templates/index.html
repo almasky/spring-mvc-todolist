@@ -4,65 +4,89 @@
     <meta charset="UTF-8">
     <title>My To-Do List</title>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
-    <style> /* Basic inline styles for demonstration */
-    .completed { text-decoration: line-through; color: grey; }
-    ul { list-style-type: none; padding: 0; }
-    li { margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;}
-    .actions form { display: inline-block; margin-left: 10px; }
-    .item-description { flex-grow: 1; }
-    .auth-info { margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc;}
-    .alert { padding: 10px; margin-bottom: 15px; border: 1px solid transparent; border-radius: 4px; }
-    .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-    .text-danger { color: #721c24; } /* For inline error messages */
-    </style>
 </head>
 <body>
 <div class="container">
     <div class="auth-info">
-        Welcome, <strong sec:authentication="name">[Username]</strong>!
-        <!-- CSRF token is automatically included by Thymeleaf if Spring Security CSRF is enabled -->
-        <form th:action="@{/perform_logout}" method="post" style="display: inline; margin-left: 20px;">
+        Welcome, <strong sec:authentication="name">User</strong>
+        <form th:action="@{/perform_logout}" method="post">
             <button type="submit">Logout</button>
         </form>
     </div>
 
     <h1>My To-Do List</h1>
 
-    <!-- Display global error messages from redirects -->
-    <div th:if="${param.error == 'authError'}" class="alert alert-danger">You are not authorized to perform that action.</div>
-    <div th:if="${param.error == 'notFound'}" class="alert alert-danger">Item not found.</div>
+    <!-- Display messages from RedirectAttributes -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
+    <!-- Old error display using query params (can be removed if RedirectAttributes are preferred for all messages) -->
+    <!-- <div th:if="${param.error == 'authError'}" class="alert alert-danger">You are not authorized to perform that action.</div> -->
+    <!-- <div th:if="${param.error == 'notFound'}" class="alert alert-danger">Item not found.</div> -->
 
-    <form th:action="@{/add}" th:object="${newTodo}" method="post" style="margin-bottom: 20px;">
-        <div>
-            <label for="description">New To-Do:</label>
-            <input type="text" id="description" th:field="*{description}" placeholder="Enter a new to-do item" size="50"/>
-            <button type="submit">Add Item</button>
+    <!-- Task Counts Display -->
+    <div class="task-summary" style="margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+        <strong>Summary:</strong>
+        Total Tasks: <span th:text="${totalTasks}">0</span> |
+        Active: <span th:text="${activeTasks}">0</span> |
+        Completed: <span th:text="${completedTasks}">0</span>
+    </div>
+
+    <form th:action="@{/add}" th:object="${newTodo}" method="post" class="inline-form add-item-form">
+        <div class="form-group description-group">
+            <label for="add_description">New To-Do:</label>
+            <input type="text" id="add_description" th:field="*{description}" placeholder="Enter description"/>
         </div>
-        <!-- Display validation errors for the description field of the newTodo object -->
-        <div th:if="${#fields.hasErrors('description')}" class="text-danger">
-            <p th:errors="*{description}">Description errors</p>
+        <div class="form-group due-date-group">
+            <label for="add_dueDate">Due Date (Optional):</label>
+            <input type="datetime-local" id="add_dueDate" th:field="*{dueDate}"/>
+        </div>
+        <div class="form-group add-button-group">
+            <label for="addItemBtn" style="visibility: hidden;">Add</label> <!-- Hidden label for accessibility -->
+            <button id="addItemBtn" type="submit">Add Item</button>
         </div>
     </form>
+    <div th:if="${#fields.hasErrors('${newTodo.*}')}" class="text-danger validation-summary">
+        <p th:each="err : ${#fields.errors('${newTodo.*}')}" th:text="${err}">Validation error</p>
+    </div>
+
 
     <h2>Items:</h2>
-    <ul th:if="${not #lists.isEmpty(todos)}">
+    <ul id="todo-list" th:if="${not #lists.isEmpty(todos)}">
         <li th:each="todo : ${todos}" th:classappend="${todo.completed} ? 'completed' : ''">
-            <span class="item-description" th:text="${todo.description}">Item Description</span>
+            <div class="item-details">
+                <span class="item-description" th:text="${todo.description}">Item Description</span>
+                <div class="item-dates">
+                    <small th:if="${todo.createdAt}">
+                        Created: <span th:text="${#temporals.format(todo.createdAt, 'dd-MMM-yyyy HH:mm')}"></span>
+                    </small>
+                    <small th:if="${todo.dueDate}" style="display: block; margin-top: 2px;">
+                        Due: <span th:text="${#temporals.format(todo.dueDate, 'dd-MMM-yyyy HH:mm')}"
+                                   th:classappend="${!todo.completed && todo.dueDate != null && todo.dueDate.isBefore(#temporals.createNow())} ? 'overdue-date' : ''"></span>
+                    </small>
+                </div>
+            </div>
             <div class="actions">
-                <!-- CSRF token is automatically included by Thymeleaf -->
                 <form th:action="@{/toggle/{id}(id=${todo.id})}" method="post">
-                    <button type="submit" th:text="${todo.completed} ? 'Mark Incomplete' : 'Mark Complete'">Toggle</button>
+                    <button type="submit"
+                            th:text="${todo.completed} ? 'Mark Incomplete' : 'Mark Complete'"
+                            th:classappend="${todo.completed} ? 'toggle-btn-complete' : 'toggle-btn-incomplete'">Toggle</button>
                 </form>
-                <!-- CSRF token is automatically included by Thymeleaf -->
                 <form th:action="@{/delete/{id}(id=${todo.id})}" method="post">
-                    <button type="submit">Delete</button>
+                    <button type="submit" class="delete-btn">Delete</button>
                 </form>
             </div>
         </li>
     </ul>
     <p th:if="${#lists.isEmpty(todos)}">No to-do items yet! Add one above.</p>
+
+    <!-- Clear Completed Button Form -->
+    <div style="margin-top: 30px; text-align: right;" th:if="${completedTasks > 0}"> <!-- Only show if there are completed tasks -->
+        <form th:action="@{/clear-completed}" method="post">
+            <button type="submit" class="delete-btn">Clear All Completed Tasks</button>
+        </form>
+    </div>
+
 </div>
 </body>
 </html>
